@@ -1,0 +1,500 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Toán 10 - Ôn Tập HK2 - THPT Việt Đức</title>
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- React & ReactDOM -->
+    <script src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
+    <script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
+    <!-- Babel for JSX -->
+    <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+    <!-- Lucide Icons -->
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <!-- MathJax Config -->
+    <script>
+        window.MathJax = {
+            tex: {
+                inlineMath: [['$', '$'], ['\\(', '\\)']],
+                displayMath: [['$$', '$$'], ['\\[', '\\]']],
+                processEscapes: true
+            },
+            options: {
+                ignoreHtmlClass: 'tex2jax_ignore',
+                processHtmlClass: 'tex2jax_process'
+            },
+            startup: {
+                ready: () => {
+                    MathJax.startup.defaultReady();
+                    window.mathjaxReady = true;
+                }
+            }
+        };
+    </script>
+    <script src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap');
+        body { 
+            font-family: 'Inter', sans-serif; 
+            -webkit-tap-highlight-color: transparent;
+        }
+        .tex2jax_process {
+            display: inline-block;
+            min-height: 1.2em;
+        }
+    </style>
+</head>
+<body class="bg-slate-50">
+    <div id="root"></div>
+
+    <script type="text/babel">
+        const { useState, useEffect, useMemo, useRef } = React;
+
+        // Thành phần Icon đã được sửa để không gây lỗi removeChild
+        const Icon = ({ name, size = 24, className = "" }) => {
+            const containerRef = useRef(null);
+
+            useEffect(() => {
+                if (window.lucide && containerRef.current) {
+                    // Xóa nội dung cũ để tránh lồng SVG khi re-render
+                    containerRef.current.innerHTML = `<i data-lucide="${name}"></i>`;
+                    window.lucide.createIcons({
+                        node: containerRef.current,
+                        attrs: {
+                            width: size,
+                            height: size,
+                            class: className
+                        }
+                    });
+                }
+            }, [name, size, className]);
+
+            return <span ref={containerRef} className="inline-flex items-center justify-center"></span>;
+        };
+
+        const MathText = ({ text, className = "" }) => {
+            const nodeRef = useRef(null);
+            const safeText = typeof text === 'string' ? text : "";
+
+            useEffect(() => {
+                if (window.MathJax && window.MathJax.typesetPromise && nodeRef.current) {
+                    window.MathJax.typesetPromise([nodeRef.current]).catch(err => console.error(err));
+                }
+            }, [safeText]);
+
+            return (
+                <span 
+                    ref={nodeRef} 
+                    className={`tex2jax_process ${className}`} 
+                    dangerouslySetInnerHTML={{ __html: safeText }} 
+                />
+            );
+        };
+
+        const QUIZ_DATA = {
+            part1: [
+                { id: 1, question: "Cho hàm số $f(x)=\\sqrt{2x^{2}+1}$. Giá trị $f(-2)$ bằng", options: ["$-3$", "$3$", "$4$", "Không xác định"], correct: 1, solution: { steps: ["Thay $x = -2$ vào hàm số: $f(-2) = \\sqrt{2(-2)^2 + 1}$.", "Tính toán: $f(-2) = \\sqrt{2 \\cdot 4 + 1} = \\sqrt{9} = 3$."], answer: "$3$" } },
+                { id: 2, question: "Trong mặt phẳng Oxy, đỉnh của parabol $y=x^{2}-2x-1$ có tọa độ là", options: ["$(1;-2)$", "$(1;2)$", "$(2;-1)$", "$(-1;2)$"], correct: 0, solution: { steps: ["Hoành độ đỉnh $x_I = -\\frac{b}{2a} = -\\frac{-2}{2 \\cdot 1} = 1$.", "Tung độ đỉnh $y_I = 1^2 - 2(1) - 1 = -2$. Vậy đỉnh $I(1;-2)$."], answer: "$(1;-2)$" } },
+                { id: 3, question: "Cho tam thức $f(x)=ax^{2}+bx+c(a\\ne0)$, $\\Delta=b^{2}-4ac$. Ta có $f(x)\\le0$ với $\\forall x\\in\\mathbb{R}$ khi và chỉ khi:", options: ["$\\begin{cases}a<0\\\\ \\Delta\\le0\\end{cases}$", "$\\begin{cases}a\\le0\\\\ \\Delta<0\\end{cases}$", "$\\begin{cases}a<0\\\\ \\Delta\\ge0\\end{cases}$", "$\\begin{cases}a>0\\\\ \\Delta\\le0\\end{cases}$"], correct: 0, solution: { steps: ["Áp dụng định lý dấu tam thức bậc hai.", "Để $f(x)$ luôn không dương thì $a < 0$ và $\\Delta \\le 0$."], answer: "A" } },
+                { id: 4, question: "Tập nghiệm của phương trình $\\sqrt{2x^{2}+3x-5}-x+1=0$ là", options: ["$\\{1;-6\\}$", "$\\{1\\}$", "$\\emptyset$", "$\\mathbb{R}$"], correct: 1, solution: { steps: ["Biến đổi: $\\sqrt{2x^2+3x-5} = x-1$. Điều kiện $x \\ge 1$.", "Bình phương: $2x^2+3x-5 = x^2-2x+1 \\Leftrightarrow x^2+5x-6=0$.", "Nghiệm: $x=1$ (nhận) hoặc $x=-6$ (loại vì không thỏa ĐK $x \\ge 1$)."], answer: "$\\{1\\}$" } },
+                { id: 5, question: "PT tổng quát đường thẳng đi qua $A(-2;1)$ và có vectơ pháp tuyến $\\vec{n}=(2;3)$ là", options: ["$2x+3y-5=0$", "$3x-2y+1=0$", "$2x+3y+1=0$", "$3x-2y+8=0$"], correct: 2, solution: { steps: ["Dùng CT: $a(x-x_0) + b(y-y_0) = 0$.", "$2(x+2) + 3(y-1) = 0 \\Leftrightarrow 2x+3y+1=0$."], answer: "$2x+3y+1=0$" } },
+                { id: 6, question: "Trong Oxy, phương trình tổng quát đi qua hai điểm $A(-2;1)$ và $B(2;4)$ là", options: ["$3x+4y-10=0$", "$3x-4y+10=0$", "$4x+3y+5=0$", "$4x-3y+5=0$"], correct: 1, solution: { steps: ["$\\vec{AB}=(4;3) \\Rightarrow$ VTPT $\\vec{n}=(3;-4)$.", "$3(x+2)-4(y-1)=0 \\Leftrightarrow 3x-4y+10=0$."], answer: "$3x-4y+10=0$" } },
+                { id: 7, question: "Góc giữa hai đường thẳng $a: \\sqrt{3}x-y+7=0$ và $b: x-\\sqrt{3}y-1=0$ là", options: ["$30^{\\circ}$", "$90^{\\circ}$", "$60^{\\circ}$", "$45^{\\circ}$"], correct: 0, solution: { steps: ["$\\cos \\phi = \\frac{|\\sqrt{3}\\cdot 1 + (-1)(-\\sqrt{3})|}{\\sqrt{4}\\cdot\\sqrt{4}} = \\frac{2\\sqrt{3}}{4} = \\frac{\\sqrt{3}}{2}$.", "Vậy góc là $30^{\\circ}$."], answer: "$30^{\\circ}$" } },
+                { id: 8, question: "Khoảng cách từ $M(3;-1)$ đến đường thẳng $\\Delta: 4x-3y+5=0$ thuộc khoảng nào?", options: ["$(1;3)$", "$(3;5)$", "$(7;9)$", "$(5;7)$"], correct: 1, solution: { steps: ["$d(M, \\Delta) = \\frac{|4(3)-3(-1)+5|}{\\sqrt{4^2+3^2}} = \\frac{20}{5} = 4$.", "Số 4 thuộc khoảng $(3;5)$."], answer: "$(3;5)$" } },
+                { id: 9, question: "Tâm $I$ và bán kính $R$ của đường tròn $(x-2)^{2}+(y+4)^{2}=16$ là", options: ["$I(2;-4), R=4$", "$I(2;-4), R=16$", "$I(-2;4), R=4$", "$I(-2;4), R=16$"], correct: 0, solution: { steps: ["Dạng $(x-a)^2 + (y-b)^2 = R^2 \\Rightarrow I(2;-4), R=4$."], answer: "$I(2;-4), R=4$" } },
+                { id: 10, question: "Đường tròn có tâm $I(3;1)$ và đi qua điểm $M(2;-1)$ có phương trình là", options: ["$(x+3)^{2}+(y+1)^{2}=\\sqrt{5}$", "$(x-3)^{2}+(y-1)^{2}=\\sqrt{5}$", "$(x-3)^{2}+(y-1)^{2}=5$", "$(x+3)^{2}+(y+1)^{2}=5$"], correct: 2, solution: { steps: ["$R^2 = IM^2 = (2-3)^2 + (-1-1)^2 = 5$.", "PT: $(x-3)^2+(y-1)^2=5$."], answer: "$(x-3)^{2}+(y-1)^{2}=5$" } },
+                { id: 11, question: "Vectơ chỉ phương của đường thẳng $d: \\begin{cases}x=1-4t \\\\ y=-2+3t\\end{cases}$ là", options: ["$\\vec{u}=(-4;3)$", "$\\vec{u}=(4;3)$", "$\\vec{u}=(3;4)$", "$\\vec{u}=(1;-2)$"], correct: 0, solution: { steps: ["Lấy hệ số của $t$ trong phương trình tham số."], answer: "$\\vec{u}=(-4;3)$" } },
+                { id: 12, question: "Cho $M(2;3)$ và $N(-2;5)$. Đường thẳng $MN$ có một VTCP là", options: ["$\\vec{u}=(4;2)$", "$\\vec{u}=(4;-2)$", "$\\vec{u}=(-4;-2)$", "$\\vec{u}=(-2;4)$"], correct: 1, solution: { steps: ["$\\vec{MN}=(-4;2)$. Vectơ cùng phương là $(4;-2)$."], answer: "$\\vec{u}=(4;-2)$" } },
+                { id: 13, question: "PT tham số của đường thẳng đi qua $A(2;-1)$ và $B(2;5)$ là", options: ["$\\begin{cases}x=2t \\\\ y=-6t\\end{cases}$", "$\\begin{cases}x=2+t \\\\ y=5+6t\\end{cases}$", "$\\begin{cases}x=1 \\\\ y=2+6t\\end{cases}$", "$\\begin{cases}x=2 \\\\ y=-1+6t\\end{cases}$"], correct: 3, solution: { steps: ["$\\vec{AB}=(0;6)$. Đường thẳng đứng qua $x=2$."], answer: "D" } },
+                { id: 14, question: "PT nào không phải là PT tham số của $AB$ với $A(3;-1), B(-6;2)$?", options: ["$\\begin{cases}x=3+3t \\\\ y=-1-t\\end{cases}$", "$\\begin{cases}x=3+3t \\\\ y=-1+t\\end{cases}$", "$\\begin{cases}x=-3t \\\\ y=t\\end{cases}$", "$\\begin{cases}x=-6-3t \\\\ y=2+t\\end{cases}$"], correct: 1, solution: { steps: ["$\\vec{AB}=(-9;3) \\Rightarrow$ VTCP $(3;-1)$. Câu B có VTCP $(3;1)$ nên sai."], answer: "B" } },
+                { id: 15, question: "PT qua $A(1;-2)$ và vuông góc với $\\Delta: 3x-2y+1=0$ là", options: ["$3x-2y-7=0$", "$2x+3y+4=0$", "$x+3y+5=0$", "$2x+3y-3=0$"], correct: 1, solution: { steps: ["$d \\perp \\Delta \\Rightarrow \\vec{n}_d = (2;3)$. $2(x-1)+3(y+2)=0 \\Leftrightarrow 2x+3y+4=0$."], answer: "$2x+3y+4=0$" } },
+                { id: 16, question: "Đường thẳng qua $M(1;1)$ và song song với $d': x+y-1=0$ là", options: ["$x+y-1=0$", "$x-y=0$", "$-x+y-1=0$", "$x+y-2=0$"], correct: 3, solution: { steps: ["$d // d' \\Rightarrow x+y+C=0$. Đi qua $(1,1) \\Rightarrow 1+1+C=0 \\Rightarrow C=-2$."], answer: "$x+y-2=0$" } },
+                { id: 17, question: "Phương trình tổng quát qua $A(1;1)$ và $B(-3;2)$ là", options: ["$4x-y+14=0$", "$-3x+2y+14=0$", "$x+4y+5=0$", "$x+4y-5=0$"], correct: 3, solution: { steps: ["$\\vec{AB}=(-4;1) \\Rightarrow \\vec{n}=(1;4)$. $1(x-1)+4(y-1)=0$."], answer: "$x+4y-5=0$" } },
+                { id: 18, question: "Vị trí tương đối $d_1: x+y-4=0$ và $d_2: -2x-2y+6=0$:", options: ["Trùng nhau", "Song song", "Vuông góc", "Cắt nhau"], correct: 1, solution: { steps: ["$\\frac{1}{-2} = \\frac{1}{-2} \\ne \\frac{-4}{6} \\Rightarrow$ Song song."], answer: "Song song" } },
+                { id: 19, question: "Vị trí tương đối $d_1: x-4=0$ và $d_2: 2x+y+6=0$:", options: ["Trùng nhau", "Song song", "Vuông góc", "Cắt nhau"], correct: 3, solution: { steps: ["$\\frac{1}{2} \\ne \\frac{0}{1} \\Rightarrow$ Cắt nhau."], answer: "Cắt nhau" } },
+                { id: 20, question: "Vị trí tương đối $d_1: x+5=0$ và $d_2: y-7=0$:", options: ["Trùng nhau", "Song song", "Vuông góc", "Cắt nhau"], correct: 2, solution: { steps: ["$\\vec{n}_1=(1;0), \\vec{n}_2=(0;1) \\Rightarrow \\vec{n}_1 \\cdot \\vec{n}_2 = 0$."], answer: "Vuông góc" } },
+                { id: 21, question: "Xét vị trí tương đối của $d_1: \\begin{cases}x=1+2t \\\\ y=-2-t\\end{cases}$ và $d_2: \\begin{cases}x=-1-4t' \\\\ y=3+2t'\\end{cases}$", options: ["Trùng nhau", "Song song", "Vuông góc", "Cắt nhau"], correct: 1, solution: { steps: ["VTCP $\\vec{u}_1=(2;-1), \\vec{u}_2=(-4;2)$. Ta thấy $\\vec{u}_2 = -2\\vec{u}_1$.", "Thử điểm $M(1;-2) \\in d_1$ vào $d_2$: $1 = -1-4t' \\Rightarrow t' = -0.5$. Thay vào $y$: $3+2(-0.5)=2 \\ne -2$."], answer: "Song song" } },
+                { id: 22, question: "Góc giữa $\\Delta_1: \\begin{cases}x=2+3t \\\\ y=4-2t\\end{cases}$ và $\\Delta_2: \\begin{cases}x=-3+2t \\\\ y=1+3t\\end{cases}$ là", options: ["$90^{\\circ}$", "$45^{\\circ}$", "$60^{\\circ}$", "$30^{\\circ}$"], correct: 0, solution: { steps: ["$\\vec{u}_1=(3;-2), \\vec{u}_2=(2;3) \\Rightarrow \\vec{u}_1 \\cdot \\vec{u}_2 = 6-6=0$."], answer: "$90^{\\circ}$" } },
+                { id: 23, question: "Cosin góc giữa $\\Delta_1: 3x+4y+1=0$ và $\\Delta_2: \\begin{cases}x=15+12t \\\\ y=1+5t\\end{cases}$ bằng", options: ["$\\frac{56}{65}$", "$\\frac{33}{65}$", "$-\\frac{33}{65}$", "$\\frac{12}{13}$"], correct: 1, solution: { steps: ["$\\vec{n}_1=(3;4), \\vec{u}_2=(12;5) \\Rightarrow \\vec{n}_2=(5;-12)$.", "$\\cos \\phi = \\frac{|3 \\cdot 5 + 4 \\cdot (-12)|}{5 \\cdot 13} = \\frac{33}{65}$."], answer: "$\\frac{33}{65}$" } },
+                { id: 24, question: "Khoảng cách từ $M(-2;1)$ đến $\\Delta: x-3y+6=0$ bằng", options: ["$\\frac{\\sqrt{10}}{10}$", "$2\\sqrt{10}$", "$\\frac{\\sqrt{10}}{5}$", "$\\frac{2}{\\sqrt{10}}$"], correct: 0, solution: { steps: ["$d = \\frac{|-2-3(1)+6|}{\\sqrt{1+9}} = \\frac{1}{\\sqrt{10}}$."], answer: "$\\frac{\\sqrt{10}}{10}$" } },
+                { id: 25, question: "Trong mặt phẳng Oxy, khoảng cách từ $M(3;-2)$ đến $\\Delta: \\begin{cases}x=1+2t \\\\ y=-t\\end{cases}$ là", options: ["$\\frac{\\sqrt{5}}{5}$", "$2\\sqrt{5}$", "$\\frac{2}{\\sqrt{5}}$", "$\\sqrt{5}$"], correct: 2, solution: { steps: ["$\\Delta$ PTTQ: $x+2y-1=0$.", "$d = \\frac{|3+2(-2)-1|}{\\sqrt{5}} = \\frac{2}{\\sqrt{5}}$."], answer: "$\\frac{2}{\\sqrt{5}}$" } },
+                { id: 26, question: "Tâm đường tròn đường kính $AB$ với $A(1;-3), B(-5;7)$ là", options: ["$(-2;2)$", "$(2;2)$", "$(3;-1)$", "$(3;1)$"], correct: 0, solution: { steps: ["Tâm $I = \\text{trung điểm } AB = (-2;2)$."], answer: "$(-2;2)$" } },
+                { id: 27, question: "Phương trình nào là phương trình đường tròn?", options: ["$4x^{2}+y^{2}-10x-6y-2=0$", "$x^{2}+y^{2}-4x+6y-12=0$", "$x^{2}+2y^{2}-4x-8y+1=0$", "$x^{2}+y^{2}-2x-8y+20=0$"], correct: 1, solution: { steps: ["Câu B: $a=2, b=-3, c=-12 \\Rightarrow a^2+b^2-c = 25 > 0$."], answer: "B" } },
+                { id: 28, question: "Đường tròn $x^{2}+y^{2}-5y=0$ có bán kính bằng", options: ["$5$", "$2.5$", "$25$", "$\\sqrt{5}$"], correct: 1, solution: { steps: ["$a=0, b=2.5, c=0 \\Rightarrow R = \\sqrt{2.5^2} = 2.5$."], answer: "$2.5$" } },
+                { id: 29, question: "Tìm $m$ để $(C_m): x^{2}+y^{2}-4mx-2my+2m+3=0$ là đường tròn", options: ["$m < -3/5 \\lor m > 1$", "$m < -5/3$", "$m > 1$", "$-3/5 < m < 1$"], correct: 0, solution: { steps: ["$a=2m, b=m, c=2m+3$. ĐK: $(2m)^2+m^2-(2m+3)>0 \\Leftrightarrow 5m^2-2m-3>0$."], answer: "$m < -3/5 \\lor m > 1$" } },
+                { id: 30, question: "Tâm và bán kính $(x+5)^{2}+(y-4)^{2}=16$ là", options: ["$I(5;-4), R=16$", "$I(-5;4), R=16$", "$I(-5;4), R=4$", "$I(5;-4), R=4$"], correct: 2, solution: { steps: ["$a=-5, b=4, R=4$."], answer: "$I(-5;4), R=4$" } },
+                { id: 31, question: "Một tổ có 5 học sinh nữ và 6 học sinh nam. Có bao nhiêu cách chọn 1 học sinh?", options: ["$11$", "$30$", "$5$", "$6$"], correct: 0, solution: { steps: ["Số cách chọn là $5+6=11$."], answer: "$11$" } },
+                { id: 32, question: "Có 10 cặp vợ chồng. Chọn 1 nam, 1 nữ không là vợ chồng có bao nhiêu cách?", options: ["$100$", "$90$", "$10$", "$19$"], correct: 1, solution: { steps: ["Chọn nam: 10 cách. Chọn nữ: 9 cách (trừ vợ nam đó). $10 \\cdot 9 = 90$."], answer: "$90$" } },
+                { id: 33, question: "Có bao nhiêu cách sắp xếp 5 học sinh hàng dọc?", options: ["$5!$", "$5^{5}$", "$120!$", "$25$"], correct: 0, solution: { steps: ["Hoán vị 5 phần tử: $5! = 120$."], answer: "$5!$" } },
+                { id: 34, question: "Từ chữ số $\\{3;4;8;9\\}$ lập được bao nhiêu số tự nhiên có 4 chữ số?", options: ["$256$", "$324$", "$248$", "$124$"], correct: 0, solution: { steps: ["Mỗi vị trí có 4 cách chọn. $4^4 = 256$."], answer: "$256$" } },
+                { id: 35, question: "Hộp 2 bi xanh, 3 bi đỏ. Lấy 2 bi bất kỳ có bao nhiêu cách?", options: ["$10$", "$5$", "$20$", "$6$"], correct: 0, solution: { steps: ["$C_5^2 = 10$."], answer: "$10$" } },
+                { id: 36, question: "Tổ 10 học sinh. Chọn 2 em làm tổ trưởng và tổ phó có bao nhiêu cách?", options: ["$90$", "$45$", "$100$", "$20$"], correct: 0, solution: { steps: ["Chọn có thứ tự: $A_{10}^2 = 90$."], answer: "$90$" } },
+                { id: 37, question: "Cho 6 điểm phân biệt không có 3 điểm nào thẳng hàng. Số tam giác tạo thành là", options: ["$20$", "$18$", "$120$", "$60$"], correct: 0, solution: { steps: ["Số tam giác là $C_6^3 = 20$."], answer: "$20$" } },
+                { id: 38, question: "Có bao nhiêu số tự nhiên có 2 chữ số đều lẻ?", options: ["$25$", "$50$", "$20$", "$10$"], correct: 0, solution: { steps: ["Có 5 chữ số lẻ. Số các số là $5 \\cdot 5 = 25$."], answer: "$25$" } },
+                { id: 39, question: "20 nam, 18 nữ. Chọn 1 đôi nam nữ khiêu vũ có bao nhiêu cách?", options: ["$360$", "$38$", "$C_{38}^2$", "$C_{20}^2$"], correct: 0, solution: { steps: ["$20 \\cdot 18 = 360$."], answer: "$360$" } },
+                { id: 40, question: "Chọn 3 người từ 30 người đi công tác có bao nhiêu cách?", options: ["$C_{30}^3$", "$A_{30}^3$", "$3^{30}$", "$90$"], correct: 0, solution: { steps: ["Chọn không thứ tự: $C_{30}^3$."], answer: "$C_{30}^3$" } },
+                { id: 41, question: "Khai triển $(a+b)^{4}$ có bao nhiêu số hạng?", options: ["$5$", "$4$", "$3$", "$6$"], correct: 0, solution: { steps: ["Số số hạng là $n+1 = 4+1 = 5$."], answer: "$5$" } },
+                { id: 42, question: "Số hạng chính giữa của $(2x-3)^{4}$ là", options: ["$216x^2$", "$45x^2$", "$108x^2$", "$216x^3$"], correct: 0, solution: { steps: ["Số hạng thứ 3: $C_4^2(2x)^2(-3)^2 = 6 \\cdot 4x^2 \\cdot 9 = 216x^2$."], answer: "$216x^2$" } },
+                { id: 43, question: "Khai triển của nhị thức $(1-2x)^{5}$ là", options: ["$1-10x+40x^2-80x^3+80x^4-32x^5$", "$1+10x+40x^2+80x^3+80x^4+32x^5$", "$1-10x+40x^2-80x^3-80x^4-32x^5$", "$1-2x+4x^2-8x^3+16x^4-32x^5$"], correct: 0, solution: { steps: ["Dùng nhị thức Newton: $1 - C_5^1(2x) + C_5^2(2x)^2 - ...$"], answer: "A" } },
+                { id: 44, question: "Gieo đồng tiền liên tiếp 3 lần thì $n(\\Omega)$ là", options: ["$8$", "$6$", "$4$", "$16$"], correct: 0, solution: { steps: ["$2 \\cdot 2 \\cdot 2 = 8$."], answer: "$8$" } },
+                { id: 45, question: "Gieo đồng tiền 2 lần. Số phần tử để mặt ngửa xuất hiện đúng 1 lần là", options: ["$2$", "$4$", "$1$", "$3$"], correct: 0, solution: { steps: ["$\\{SN, NS\\} \\Rightarrow 2$ phần tử."], answer: "$2$" } },
+                { id: 46, question: "Gieo ngẫu nhiên 2 đồng tiền. Không gian mẫu có bao nhiêu biến cố?", options: ["$16$", "$4$", "$8$", "$12$"], correct: 0, solution: { steps: ["$n(\\Omega) = 4$. Số biến cố là $2^{n(\\Omega)} = 2^4 = 16$."], answer: "$16$" } },
+                { id: 47, question: "Xác suất để mặt chấm chẵn xuất hiện khi gieo súc sắc là", options: ["$0.5$", "$0.3$", "$0.2$", "$0.4$"], correct: 0, solution: { steps: ["Mặt chẵn $\\{2,4,6\\} \\Rightarrow 3/6 = 0.5$."], answer: "$0.5$" } },
+                { id: 48, question: "Cho $A$ và $\\overline{A}$ là hai biến cố đối. Chọn câu đúng:", options: ["$P(A)=1-P(\\overline{A})$", "$P(A)=1+P(\\overline{A})$", "$P(A)=P(\\overline{A})$", "$P(A)+P(\\overline{A})=0$"], correct: 0, solution: { steps: ["Định nghĩa biến cố đối: $P(A) + P(\\overline{A}) = 1$."], answer: "A" } },
+                { id: 49, question: "Gieo đồng tiền 3 lần. Xác suất có ít nhất 1 lần sấp là", options: ["$7/8$", "$1/8$", "$1/2$", "$3/8$"], correct: 0, solution: { steps: ["Biến cố đối: cả 3 lần ngửa ($1/8$). $P = 1 - 1/8 = 7/8$."], answer: "$7/8$" } },
+                { id: 50, question: "Từ $\\{0;1;2;3\\}$ lập được bao nhiêu số tự nhiên có 4 chữ số khác nhau?", options: ["$18$", "$24$", "$6$", "$12$"], correct: 0, solution: { steps: ["Chữ số đầu: 3 cách. Hoán vị 3 số còn lại: $3! = 6$. Tổng $3 \\cdot 6 = 18$."], answer: "$18$" } }
+            ],
+            part2: [
+                { id: 1, title: "Cho đường thẳng $d: x-2y+3=0$. Xét tính Đúng/Sai:", questions: [
+                    { text: "a) Vectơ pháp tuyến là $\\vec{n}=(1; 2)$.", correct: false, reason: "VTPT đúng là $\\vec{n}=(1; -2)$." },
+                    { text: "b) Vectơ chỉ phương là $\\vec{u}=(2; 1)$.", correct: true, reason: "Vì tích vô hướng $\\vec{u} \\cdot \\vec{n} = 1(2) + (-2)(1) = 0$." },
+                    { text: "c) VTCP $\\vec{u}=(a; b)$ thì $a-2b=0$.", correct: true, reason: "Đúng theo điều kiện vuông góc với $\\vec{n}(1;-2)$." },
+                    { text: "d) $\\vec{AB}=(3; 1.5)$ là một VTCP của d.", correct: true, reason: "$A(-3,0), B(0,1.5) \\in d \\Rightarrow \\vec{AB}=(3, 1.5)$." }
+                ]},
+                { id: 2, title: "Cho đường thẳng $\\Delta: 3x-4y+16=0$. Xét Đúng/Sai:", questions: [
+                    { text: "a) Vectơ pháp tuyến $\\vec{n}=(3; 4)$.", correct: false, reason: "VTPT là $(3; -4)$." },
+                    { text: "b) Đi qua điểm $M(3; -4)$.", correct: false, reason: "Thay vào PT: $9+16+16=41 \\ne 0$." },
+                    { text: "c) Hệ số góc $k = 3/4$.", correct: true, reason: "$y = 0.75x + 4$." },
+                    { text: "d) Vectơ chỉ phương là $\\vec{u}=(1; 3/2)$.", correct: false, reason: "VTCP tỉ lệ với $(4;3)$." }
+                ]},
+                { id: 3, title: "Cho tam giác $ABC, A(1;4), B(3;2), C(7;3)$. Xét Đúng/Sai:", questions: [
+                    { text: "a) VTCP đường thẳng $AB$ là $\\vec{u}=(-2; 2)$.", correct: true, reason: "$\\vec{BA}=(-2,2)$." },
+                    { text: "b) Trung tuyến $AM$ có VTCP $\\vec{u}=(4; -3/4)$.", correct: false, reason: "$M(5, 2.5) \\Rightarrow \\vec{AM}=(4, -1.5)$." },
+                    { text: "c) Cao $AH$ có VTPT $\\vec{n}=(-1; 4)$.", correct: false, reason: "VTPT của $AH$ là $\\vec{BC}=(4,1)$." },
+                    { text: "d) Đường song song $AB$ có VTPT $\\vec{n}=(1; 1)$.", correct: true, reason: "Vuông góc $(-2,2) \\sim (-1,1) \\Rightarrow (1,1)$." }
+                ]},
+                { id: 4, title: "Cho $\\Delta_1: x-y+2=0$ và $\\Delta_2: \\begin{cases}x=1+3t \\\\ y=-2+t\\end{cases}$.", questions: [
+                    { text: "a) $\\Delta_1$ có VTPT $\\vec{n}=(1; 1)$.", correct: false, reason: "VTPT là $(1; -1)$." },
+                    { text: "b) $\\Delta_2$ có VTCP $\\vec{u}=(1; -2)$.", correct: false, reason: "VTCP là $(3; 1)$." },
+                    { text: "c) PT tham số $\\Delta_1: \\begin{cases}x=t \\\\ y=2+t\\end{cases}$.", correct: true, reason: "Thay vào thấy thỏa mãn." },
+                    { text: "d) PT tổng quát $\\Delta_2: x-3y-7=0$.", correct: true, reason: "$x=1+3(y+2) \\Leftrightarrow x-3y-7=0$." }
+                ]},
+                { id: 5, title: "Cho $\\triangle ABC, A(-4;-1)$, cao $BH: 2x-y+3=0, CK: 3x+2y-6=0$.", questions: [
+                    { text: "a) PT đường thẳng $AB: 2x-3y+5=0$.", correct: true, reason: "$AB \\perp CK \\Rightarrow n_{AB}=(2,-3)$." },
+                    { text: "b) PT đường thẳng $AC: x+2y-6=0$.", correct: false, reason: "$AC \\perp BH \\Rightarrow n_{AC}=(1,2) \\Rightarrow x+2y+6=0$." },
+                    { text: "c) Tọa độ $B(-1; 1)$.", correct: true, reason: "$B$ là giao $AB, BH$." },
+                    { text: "d) PT đường thẳng $BC: x+y-1=0$.", correct: false, reason: "Cần tìm C rồi mới viết BC." }
+                ]},
+                { id: 6, title: "Cho $\\Delta_1: \\begin{cases}x=2+5t \\\\ y=3-6t\\end{cases}$ và $\\Delta_2: \\begin{cases}x=7+5t' \\\\ y=-3+6t'\\end{cases}$.", questions: [
+                    { text: "a) VTCP lần lượt là $\\vec{u}_1=(5;-6), \\vec{u}_2=(5;6)$.", correct: true, reason: "Hệ số tham số." },
+                    { text: "b) Hai đường thẳng song song.", correct: false, reason: "VTCP không tỉ lệ." },
+                    { text: "c) Điểm $M(7; 3)$ là giao điểm của hai đường thẳng.", correct: false, reason: "Thay tọa độ $(7;3)$ vào hệ không thỏa mãn." },
+                    { text: "d) Đường thẳng $d \\perp \\Delta_1$ qua $M(1;2)$ có PT $5x-6y+7=0$.", correct: true, reason: "$n_d=u_1=(5,-6)$." }
+                ]},
+                { id: 7, title: "Cho đường tròn $(C): x^2+y^2+4x+6y-12=0$. Xét:", questions: [
+                    { text: "a) Tâm $I(2; 3)$.", correct: false, reason: "Tâm là $I(-2;-3)$." },
+                    { text: "b) Bán kính $R=5$.", correct: true, reason: "$R = \\sqrt{4+9+12}=5$." },
+                    { text: "c) PT đường tròn $(x+2)^2+(y+3)^2=25$.", correct: true, reason: "Đúng chuẩn." },
+                    { text: "d) Điểm $M(2; -6) \\in (C)$.", correct: true, reason: "Thay tọa độ thấy thỏa mãn." }
+                ]},
+                { id: 8, title: "Cho $A=\\{1,2,3,4\\}$. Chọn ngẫu nhiên 2 số. Xét:", questions: [
+                    { text: "a) Lập được 24 số tự nhiên có 4 chữ số khác nhau.", correct: true, reason: "$4! = 24$." },
+                    { text: "b) Lập được 12 số chẵn có 4 chữ số khác nhau.", correct: true, reason: "2 cách chọn đvị, 6 cách hoán vị 3 số." },
+                    { text: "c) Số phần tử không gian mẫu khi lấy 2 số là 6.", correct: true, reason: "$C_4^2=6$." },
+                    { text: "d) Xác suất chọn được 2 số đều chẵn là $1/6$.", correct: true, reason: "Cặp (2,4)." }
+                ]},
+                { id: 9, title: "Một tổ có 5 học sinh nam và 7 học sinh nữ. Khi đó:", questions: [
+                    { text: "a) Số cách chọn 2 học sinh là $C_{12}^2$.", correct: true, reason: "Đúng theo công thức tổ hợp." },
+                    { text: "b) Số cách chọn 1 học sinh nam và 2 học sinh nữ là 210.", correct: false, reason: "$C_5^1 \\cdot C_7^2 = 105$." },
+                    { text: "c) Xác suất để chọn được 2 học sinh nữ đi thi hát là $\\frac{C_7^2}{C_{12}^2}$.", correct: true, reason: "Đúng." },
+                    { text: "d) Xác suất để chọn được 2 học sinh nam đi thi hát là $\\frac{C_5^2}{C_{12}^2}$.", correct: true, reason: "Đúng." }
+                ]},
+                { id: 10, title: "Một tổ có 4 học sinh nam và 6 học sinh nữ. Khi đó:", questions: [
+                    { text: "a) Có $10!$ cách xếp hàng dọc.", correct: true, reason: "Hoán vị 10 em." },
+                    { text: "b) Có 30 cách chọn 2 nam và 2 nữ đi văn nghệ.", correct: false, reason: "$C_4^2 \\cdot C_6^2 = 90$." },
+                    { text: "c) Xác suất chọn 3 học sinh có 2 nam, 1 nữ là $\\frac{C_4^2 C_6^1}{C_{10}^3}$.", correct: true, reason: "Đúng." },
+                    { text: "d) Xác suất chọn 3 học sinh nữ là $\\frac{C_6^3}{C_{10}^3}$.", correct: true, reason: "Đúng." }
+                ]},
+                { id: 11, title: "Cho hàm số $y=f(x)$ có đồ thị Parabol. Xét:", questions: [
+                    { text: "a) $f(x) < 0 \\Leftrightarrow x \\in (1; 3)$.", correct: true, reason: "Đồ thị dưới Ox." },
+                    { text: "b) $f(x) \\le 0 \\Leftrightarrow x \\in [1; 3]$.", correct: true, reason: "Bao gồm biên." },
+                    { text: "c) $f(x) > 0 \\Leftrightarrow x \\in (-\\infty; 1) \\cup (3; +\\infty)$.", correct: true, reason: "Đồ thị trên Ox." },
+                    { text: "d) $f(x) \\ge 0 \\Leftrightarrow x \\in [1; 3]$.", correct: false, reason: "Ý này sai hoàn toàn." }
+                ]},
+                { id: 12, title: "Khai triển biểu thức $(1-x)^6$. Khi đó:", questions: [
+                    { text: "a) Hệ số của $x^2$ là $C_6^2$.", correct: true, reason: "$(-x)^2=x^2$." },
+                    { text: "b) Hệ số của $x^3$ là $C_6^3$.", correct: false, reason: "Hệ số là $-C_6^3$." },
+                    { text: "c) Hệ số của $x^5$ là $-C_6^5$.", correct: true, reason: "Lũy thừa lẻ của số âm." },
+                    { text: "d) $C_6^0 - C_6^1 + C_6^2 - C_6^3 + C_6^4 - C_6^5 + C_6^6 = 1$.", correct: false, reason: "Tổng này bằng 0 (thay x=1)." }
+                ]},
+                { id: 13, title: "Elip (E) dạng $\\frac{x^2}{a^2} + \\frac{y^2}{b^2} = 1$ qua $A(7,0), B(0,5)$. Khi đó:", questions: [
+                    { text: "a) $a^2 = 7$.", correct: false, reason: "$a=7 \\Rightarrow a^2=49$." },
+                    { text: "b) $a^2 - b^2 = 6$.", correct: false, reason: "$49-25=24$." },
+                    { text: "c) Điểm $C(1;1)$ nằm bên trong elip (E).", correct: true, reason: "$1/49 + 1/25 < 1$." },
+                    { text: "d) Tiêu cự của elip bằng $2\\sqrt{6}$.", correct: false, reason: "$c = \\sqrt{24}=2\\sqrt{6} \\Rightarrow 2c=4\\sqrt{6}$." }
+                ]},
+                { id: 14, title: "Gieo 2 con xúc xắc cân đối và đồng chất. Khi đó:", questions: [
+                    { text: "a) Xác suất để 'Số chấm xuất hiện trên hai mặt bằng nhau' bằng $1/6$.", correct: true, reason: "6 cặp thuận lợi." },
+                    { text: "b) Xác suất để 'Có đúng một mặt 6 chấm xuất hiện' bằng $5/8$.", correct: false, reason: "Xác suất là $10/36 = 5/18$." },
+                    { text: "c) Xác suất để 'Có ít nhất một mặt 6 chấm xuất hiện' bằng $11/36$.", correct: true, reason: "$1 - (5/6)^2 = 11/36$." },
+                    { text: "d) Xác suất để 'Tổng số chấm xuất hiện nhỏ hơn 9' bằng $3/14$.", correct: false, reason: "Sử dụng biến cố đối $\\overline{A}$: 'Tổng số chấm $\\ge 9$'. Các kết quả: sum=9 (4), sum=10 (3), sum=11 (2), sum=12 (1) $\\Rightarrow n(\\overline{A})=10$. Khi đó $P(A) = 1 - 10/36 = 13/18 \\ne 3/14$." }
+                ]},
+                { id: 15, title: "Cho hàm số $y=f(x)=x^2-4x+3$. Khi đó:", questions: [
+                    { text: "a) Đỉnh parabol là $I(2; -1)$.", correct: true, reason: "Tâm $I(2; -1)$." },
+                    { text: "b) Cắt trục tung tại điểm (0; 3).", correct: true, reason: "Thay $x=0$." },
+                    { text: "c) Đồ thị nằm phía trên trục hoành.", correct: false, reason: "Có phần nằm dưới Ox." },
+                    { text: "d) Giá trị nhỏ nhất bằng -1.", correct: true, reason: "Tung độ đỉnh." }
+                ]},
+                { id: 16, title: "An, Bình và 7 bạn xếp vào 9 ghế hàng ngang. Khi đó:", questions: [
+                    { text: "a) Có 362880 cách xếp tùy ý.", correct: true, reason: "$9! = 362880$." },
+                    { text: "b) Có 40320 cách xếp An, Bình ngồi cạnh nhau.", correct: false, reason: "$8! \\cdot 2! = 80640$." },
+                    { text: "c) Có 282240 cách xếp An, Bình không ngồi cạnh nhau.", correct: true, reason: "$9! - 8! \\cdot 2! = 282240$." },
+                    { text: "d) Có 5040 cách xếp An, Bình ở 2 đầu dãy.", correct: false, reason: "$2 \\cdot 7! = 10080$." }
+                ]},
+                { id: 17, title: "Hồ bơi elip bán trục 3m và 5m. Khi đó:", questions: [
+                    { text: "a) PT chính tắc là $\\frac{x^2}{25} + \\frac{y^2}{9} = 1$.", correct: true, reason: "$a=5, b=3$." },
+                    { text: "b) Tổng khoảng cách từ mép hồ đến M, N là 10m.", correct: true, reason: "$MF_1+MF_2=2a=10$." },
+                    { text: "c) Người đứng tại P cách O 6m đứng trong hồ.", correct: false, reason: "6m nằm ngoài trục lớn 5m." },
+                    { text: "d) Xét vị trí C trên mép hồ cách trục lớn 2m. Khi đó C cách trục nhỏ một khoảng bằng $5/3$m.", correct: false, reason: "K/c đến trục Ox là $|y|=2$. Thay vào PT: $\\frac{x^2}{25} + \\frac{4}{9} = 1 \\Rightarrow \\frac{x^2}{25} = \\frac{5}{9} \\Rightarrow x^2 = \\frac{125}{9} \\Rightarrow |x| = \\frac{5\\sqrt{5}}{3} \\text{ m} \\ne \\frac{5}{3} \\text{ m}$." }
+                ]}
+            ],
+            part3: [
+                { id: 1, question: "Trong mặt phẳng với hệ tọa độ Oxy, cho tam giác ABC có phương trình cạnh AB là $x-y-2=0$, phương trình cạnh AC là $x+2y-5=0$. Biết trọng tâm của tam giác là điểm $G(3;2)$ và phương trình đường thẳng BC có dạng $x+my+n=0$. Tìm $m+n$.", solution: { steps: ["Tìm tọa độ điểm A là giao điểm của AB và AC. Giải hệ: $\\begin{cases} x-y-2=0 \\\\ x+2y-5=0 \\end{cases} \\Rightarrow A(3;1)$.","Gọi $B(b; b-2) \\in AB$ và $C(5-2c; c) \\in AC$.","Sử dụng công thức trọng tâm: $\\begin{cases} 3+b+(5-2c) = 3 \\cdot 3 \\\\ 1+(b-2)+c = 3 \\cdot 2 \\end{cases} \\Rightarrow \\begin{cases} b-2c=1 \\\\ b+c=7 \\end{cases}$.","Giải hệ trên tìm được $b=5; c=2 \\Rightarrow B(5;3); C(1;2)$.","Viết phương trình đường thẳng BC qua B và C: $x-4y+7=0$.","Đối chiếu $BC: x+my+n=0$ ta có $m=-4; n=7$. Vậy $m+n=3$."], answer: "3" } },
+                { id: 2, question: "Cho tam giác ABC biết trực tâm $H(1;1)$ và phương trình cạnh $AB: 5x-2y+6=0$, phương trình cạnh $AC: 4x+7y-21=0$. Một vectơ pháp tuyến của cạnh BC là $\\vec{n}_{BC}=(a;-2)$. Khi đó giá trị của a bằng bao nhiêu?", solution: { steps: ["Tìm tọa độ điểm A là giao điểm của AB và AC: $\\begin{cases} 5x-2y+6=0 \\\\ 4x+7y-21=0 \\end{cases} \\Rightarrow A(0;3)$.","Đường thẳng BC đi qua B, C và vuông góc với đường cao AH.","Tính vectơ $\\vec{AH} = (1-0; 1-3) = (1;-2)$.","Vì $BC \\perp AH$ nên $\\vec{n}_{BC}$ cùng phương với $\\vec{AH}$.","Dạng của đề bài yêu cầu là $(a;-2)$, đối chiếu với $(1;-2)$ suy ra $a=1$."], answer: "1" } },
+                { id: 3, question: "Trong mặt phẳng với hệ tọa độ Oxy, cho đường thẳng $d: 2x-y-5=0$ và hai điểm $A(1;2)$, $B(4;1)$. Tính bán kính đường tròn (C) có tâm thuộc d và đi qua hai điểm A, B.", solution: { steps: ["Gọi tâm $I(t; 2t-5) \\in d$.","Vì đường tròn đi qua A, B nên $IA^2 = IB^2 \\Leftrightarrow (t-1)^2 + (2t-5-2)^2 = (t-4)^2 + (2t-5-1)^2$.","Giải phương trình: $(t-1)^2 + (2t-7)^2 = (t-4)^2 + (2t-6)^2 \\Rightarrow t=1$.","Với $t=1 \\Rightarrow I(1;-3)$.","Bán kính $R = IA = \\sqrt{(1-1)^2 + (-3-2)^2} = 5$."], answer: "5" } },
+                { id: 4, question: "Đường tròn (C) có tâm I (có hoành độ dương) thuộc đường thẳng $d: x+2y-2=0$, bán kính $R=5$ và tiếp xúc với đường thẳng $\\Delta: 3x-4y-11=0$. Phương trình của đường tròn (C) có dạng $x^2+y^2-2ax-2by+c=0$, khi đó $a+b+c$ bằng bao nhiêu?", solution: { steps: ["Gọi $I(2-2t; t)$ với $2-2t > 0$.","Tiếp xúc $\\Delta$ nên $d(I, \\Delta) = R = 5 \\Leftrightarrow \\frac{|3(2-2t)-4t-11|}{5} = 5$.","Giải phương trình $|-10t-5| = 25 \\Rightarrow t=-3$ hoặc $t=2$.","Vì $x_I > 0 \\Rightarrow$ chọn $t=-3 \\Rightarrow I(8;-3)$.","Phương trình (C): $(x-8)^2 + (y+3)^2 = 25 \\Leftrightarrow x^2+y^2-16x+6y+48=0$.","Hệ số: $2a=16, 2b=-6, c=48 \\Rightarrow a=8, b=-3, c=48 \\Rightarrow a+b+c = 53$."], answer: "53" } },
+                { id: 5, question: "Trong mặt phẳng Oxy, cho hai điểm $A(2;0)$, $B(0;3)$. Biết phương trình đường thẳng AB là $3x+by+c=0$. Tính giá trị biểu thức $T=b+2c$.", solution: { steps: ["Dùng phương trình đoạn chắn cho đường thẳng qua A, B: $\\frac{x}{2} + \\frac{y}{3} = 1$.","Quy đồng: $3x + 2y - 6 = 0$.","Đối chiếu với $3x+by+c=0 \\Rightarrow b=2, c=-6$.","Tính $T = 2 + 2(-6) = -10$."], answer: "-10" } },
+                { id: 6, question: "Cho hai điểm $A(3;-1)$, $B(0;3)$. Tìm hoành độ điểm M thuộc Ox sao khoảng cách từ M đến đường thẳng AB bằng 1, biết hoành độ điểm M lớn hơn 2.", solution: { steps: ["Viết phương trình đường thẳng AB: $\\frac{x-0}{3-0} = \\frac{y-3}{-1-3} \\Leftrightarrow 4x+3y-9=0$.","Điểm $M(x_M; 0) \\in Ox$.","Khoảng cách $d(M, AB) = \\frac{|4x_M + 3(0) - 9|}{\\sqrt{4^2+3^2}} = 1 \\Leftrightarrow |4x_M-9| = 5$.","Trường hợp 1: $4x_M-9=5 \\Rightarrow x_M=3.5$ (thỏa mãn $>2$).","Trường hợp 2: $4x_M-9=-5 \\Rightarrow x_M=1$ (loại)."], answer: "3.5" } },
+                { id: 7, question: "Trong mặt phẳng tọa độ Oxy, cho đường tròn (C): $x^2+y^2-2x+4y-4=0$. Phương trình tiếp tuyến của (C) tại điểm $M(4;-2)$ có dạng $ax+by-4=0$. Tính $a+b$.", solution: { steps: ["Tìm tâm $I(1;-2)$ và bán kính $R=3$.","Vectơ pháp tuyến của tiếp tuyến tại M là $\\vec{IM} = (4-1; -2-(-2)) = (3;0)$.","Phương trình tiếp tuyến: $3(x-4) + 0(y+2) = 0 \\Leftrightarrow 3x-12=0 \\Leftrightarrow x-4=0$.","Dạng yêu cầu: $x+0y-4=0 \\Rightarrow a=1, b=0$.","Vậy $a+b=1$."], answer: "1" } },
+                { id: 8, question: "Thang máy một tòa nhà 7 tầng xuất phát ở tầng 1 với ba người. Tính xác suất để mỗi người ra khỏi thang máy ở một tầng khác nhau (không tính tầng 1). (Làm tròn đến 0.01)", solution: { steps: ["Số tầng có thể ra là từ tầng 2 đến tầng 7 (6 tầng).","Không gian mẫu: $n(\\Omega) = 6 \\cdot 6 \\cdot 6 = 216$.","Số cách để 3 người ra ở 3 tầng khác nhau: $A_6^3 = 6 \\cdot 5 \\cdot 4 = 120$.","Xác suất $P = \\frac{120}{216} = \\frac{5}{9} \\approx 0.56$."], answer: "0.56" } },
+                { id: 9, question: "Một trường có 8 GV Toán (3 nữ, 5 nam), 4 GV Lý (nam). Chọn 3 người có đủ 2 môn và đủ nam, nữ. Có bao nhiêu cách?", solution: { steps: ["Vì chỉ môn Toán có nữ, nên đoàn bắt buộc phải có ít nhất 1 nữ Toán.","TH1: 1 nữ Toán, 1 nam Toán, 1 nam Lý: $C_3^1 \\cdot C_5^1 \\cdot C_4^1 = 3 \\cdot 5 \\cdot 4 = 60$.","TH2: 1 nữ Toán, 2 nam Lý: $C_3^1 \\cdot C_4^2 = 3 \\cdot 6 = 18$.","TH3: 2 nữ Toán, 1 nam Lý: $C_3^2 \\cdot C_4^1 = 3 \\cdot 4 = 12$.","Tổng số cách: $60 + 18 + 12 = 90$."], answer: "90" } },
+                { id: 10, question: "Hộp 7 đỏ, 3 xanh. Chọn 2 bi. P(ít nhất một xanh) = $a/b$ tối giản. Tính $P=b-a$.", solution: { steps: ["$n(\\Omega) = C_{10}^2 = 45$.","Biến cố đối $\\overline{A}$: Cả 2 bi đều màu đỏ.","Số cách chọn 2 bi đỏ: $C_7^2 = 21$.","Số cách chọn có ít nhất 1 xanh: $45 - 21 = 24$.","Xác suất $P(A) = \\frac{24}{45} = \\frac{8}{15} \\Rightarrow a=8, b=15$.","Vậy $P = 15 - 8 = 7$."], answer: "7" } },
+                { id: 11, question: "Nhóm 6 nam, 4 nữ. Chọn 3 HS. Xác suất trong 3 HS luôn có nữ là bao nhiêu?", solution: { steps: ["$n(\\Omega) = C_{10}^3 = 120$.","Biến cố đối $\\overline{A}$: Chọn 3 học sinh toàn nam.","Số cách chọn 3 nam: $C_6^3 = 20$.","Xác suất chọn toàn nam: $P(\\overline{A}) = \\frac{20}{120} = \\frac{1}{6}$.","Xác suất có ít nhất một nữ: $P = 1 - \\frac{1}{6} = \\frac{5}{6} \\approx 0.833$."], answer: "0.83" } },
+                { id: 12, question: "Gieo súc sắc cân đối hai lần. Tính số phần tử của biến cố A: 'Tổng số chấm bằng 9'.", solution: { steps: ["Liệt kê các cặp $(x;y)$ thỏa mãn $x+y=9$:","(3,6), (4,5), (5,4), (6,3).","Tổng cộng có 4 phần tử."], answer: "4" } },
+                { id: 13, question: "Hộp 20 thẻ (1-20). Lấy 1 thẻ. Tính xác suất lấy được thẻ lẻ và chia hết cho 3.", solution: { steps: ["Tập hợp số lẻ từ 1-20: {1, 3, 5, 7, 9, 11, 13, 15, 17, 19}.","Các số lẻ chia hết cho 3: {3, 9, 15}.","Số kết quả thuận lợi là 3.","Xác suất $P = \\frac{3}{20} = 0.15$."], answer: "0.15" } },
+                { id: 14, question: "Gieo súc sắc cân đối hai lần. Xác suất để ít nhất một lần xuất hiện mặt 6 chấm?", solution: { steps: ["$n(\\Omega) = 36$.","Biến cố đối: Không lần nào xuất hiện mặt 6.","Số cách gieo không mặt 6: $5 \\cdot 5 = 25$.","Xác suất ít nhất 1 lần mặt 6: $P = 1 - \\frac{25}{36} = \\frac{11}{36} \\approx 0.31$."], answer: "0.31" } },
+                { id: 15, question: "Hộp 9 thẻ (1-9). Rút 2 thẻ, nhân lại. Tính xác suất tích là số chẵn.", solution: { steps: ["$n(\\Omega) = C_9^2 = 36$.","Tích là số lẻ khi cả 2 thẻ là số lẻ.","Số thẻ lẻ: {1, 3, 5, 7, 9} (5 thẻ).","Số cách rút 2 thẻ lẻ: $C_5^2 = 10$.","Xác suất tích chẵn: $1 - \\frac{10}{36} = \\frac{26}{36} = \\frac{13}{18} \\approx 0.72$."], answer: "0.72" } },
+                { id: 16, question: "Hộp 12 bóng (4 hỏng). Lấy 3 bóng. Xác suất ít nhất 1 hỏng?", solution: { steps: ["$n(\\Omega) = C_{12}^3 = 220$.","Biến cố đối: Cả 3 bóng đều tốt.","Số bóng tốt: $12 - 4 = 8$.","Số cách chọn 3 bóng tốt: $C_8^3 = 56$.","Xác suất ít nhất 1 hỏng: $P = 1 - \\frac{56}{220} = \\frac{41}{55} \\approx 0.75$."], answer: "0.75" } },
+                { id: 17, question: "Gieo đồng tiền 5 lần. Xác suất ít nhất một lần sấp là bao nhiêu?", solution: { steps: ["$n(\\Omega) = 2^5 = 32$.","Biến cố đối: Cả 5 lần đều ngửa (1 trường hợp: NNNNN).","Xác suất ít nhất 1 sấp: $P = 1 - \\frac{1}{32} = \\frac{31}{32} = 0.96875$."], answer: "0.97" } },
+                { id: 18, question: "Ba người bắn bia (P trúng: 0.8; 0.6; 0.5). Xác suất đúng 2 người trúng là bao nhiêu?", solution: { steps: ["Gọi $A, B, C$ là biến cố người 1, 2, 3 trúng bia.","Xác suất đúng 2 người trúng bia là:","$P = P(A)P(B)P(\\overline{C}) + P(A)P(\\overline{B})P(C) + P(\\overline{A})P(B)P(C)$.","$P = (0.8 \\cdot 0.6 \\cdot 0.5) + (0.8 \\cdot 0.4 \\cdot 0.5) + (0.2 \\cdot 0.6 \\cdot 0.5)$.","$P = 0.24 + 0.16 + 0.06 = 0.46$."], answer: "0.46" } },
+                { id: 19, question: "Trạm phát sóng tại $I(-2;1), R=3$. Người tại $(-3;4)$. Khoảng cách ngắn nhất đến vùng phủ sóng là bao nhiêu km? (Làm tròn 0.01)", solution: { steps: ["Tính khoảng cách từ người đến tâm trạm $I$:"," $d = \\sqrt{(-3-(-2))^2 + (4-1)^2} = \\sqrt{1+9} = \\sqrt{10} \\approx 3.162$.","Vì $d > R$ nên người đứng ngoài vùng sóng.","Khoảng cách ngắn nhất: $d - R = 3.162 - 3 = 0.162 \\approx 0.16$ km."], answer: "0.16" } }
+            ]
+        };
+
+        const App = () => {
+            const [view, setView] = useState('home');
+            const [currentPart, setCurrentPart] = useState(null);
+            const [currentIndex, setCurrentIndex] = useState(0);
+            const [score, setScore] = useState(100);
+            const [selectedOption, setSelectedOption] = useState(null);
+            const [showSolution, setShowSolution] = useState(false);
+            const [part2Choices, setPart2Choices] = useState({});
+            const [shortAnswer, setShortAnswer] = useState('');
+
+            const activeQuestions = useMemo(() => {
+                if (!currentPart) return [];
+                return QUIZ_DATA[currentPart] || [];
+            }, [currentPart]);
+
+            const currentQ = activeQuestions[currentIndex];
+
+            const handleSelectOption = (idx) => {
+                if (selectedOption !== null) return;
+                setSelectedOption(idx);
+                setShowSolution(true);
+                if (idx !== currentQ.correct) setScore(s => Math.max(0, s - 2));
+            };
+
+            const handlePart2Choice = (subIdx, choice) => {
+                const key = `${currentIndex}-${subIdx}`;
+                if (part2Choices[key] !== undefined) return;
+                setPart2Choices(prev => ({ ...prev, [key]: choice }));
+                if (choice !== currentQ.questions[subIdx].correct) setScore(s => Math.max(0, s - 1));
+            };
+
+            const handleShortAnswerCheck = () => {
+                setShowSolution(true);
+            };
+
+            const handleNext = () => {
+                if (currentIndex < activeQuestions.length - 1) {
+                    setCurrentIndex(c => c + 1);
+                    setSelectedOption(null);
+                    setShowSolution(false);
+                    setShortAnswer('');
+                } else {
+                    setView('finish');
+                }
+            };
+
+            if (view === 'home') return (
+                <div className="min-h-screen flex items-center justify-center p-6 bg-slate-50">
+                    <div className="bg-white p-10 rounded-[2.5rem] shadow-2xl max-w-md w-full text-center border border-slate-100">
+                        <div className="w-20 h-20 bg-indigo-600 rounded-3xl flex items-center justify-center mx-auto mb-6 rotate-3 shadow-xl shadow-indigo-100">
+                            <Icon name="book-open" size={40} className="text-white -rotate-3" />
+                        </div>
+                        <h1 className="text-2xl font-black text-slate-800 mb-2 uppercase tracking-tighter">Toán 10 - Ôn Tập HK2</h1>
+                        <p className="text-slate-400 font-medium mb-10 italic">Trường THPT Việt Đức • 2025-2026</p>
+                        <div className="space-y-4">
+                            <button onClick={() => {setCurrentPart('part1'); setView('quiz'); setCurrentIndex(0); setSelectedOption(null); setShowSolution(false);}} className="w-full p-5 bg-indigo-600 text-white rounded-2xl font-bold flex justify-between items-center group transition-all shadow-lg hover:bg-indigo-700 active:scale-95 text-left">
+                                <span>Phần I: Trắc nghiệm (50 câu)</span>
+                                <Icon name="chevron-right" className="group-hover:translate-x-1 transition-transform" />
+                            </button>
+                            <button onClick={() => {setCurrentPart('part2'); setView('quiz'); setCurrentIndex(0); setSelectedOption(null); setShowSolution(false);}} className="w-full p-5 bg-purple-600 text-white rounded-2xl font-bold flex justify-between items-center group transition-all shadow-lg hover:bg-purple-700 active:scale-95 text-left">
+                                <span>Phần II: Đúng/Sai (17 câu)</span>
+                                <Icon name="chevron-right" className="group-hover:translate-x-1 transition-transform" />
+                            </button>
+                            <button onClick={() => {setCurrentPart('part3'); setView('quiz'); setCurrentIndex(0); setSelectedOption(null); setShowSolution(false);}} className="w-full p-5 bg-emerald-600 text-white rounded-2xl font-bold flex justify-between items-center group transition-all shadow-lg hover:bg-emerald-700 active:scale-95 text-left">
+                                <span>Phần III: Trả lời ngắn (19 câu)</span>
+                                <Icon name="chevron-right" className="group-hover:translate-x-1 transition-transform" />
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            );
+
+            return (
+                <div className="min-h-screen bg-[#F9FBFF] flex flex-col tex2jax_ignore">
+                    <header className="bg-white px-6 py-4 flex items-center justify-between border-b border-indigo-50 sticky top-0 z-20 shadow-sm">
+                        <button onClick={() => setView('home')} className="p-2 hover:bg-slate-100 rounded-full transition-all">
+                            <Icon name="chevron-left" size={24} />
+                        </button>
+                        <div className="text-center">
+                            <span className="text-[10px] font-black uppercase text-indigo-500 block">Tiến trình</span>
+                            <span className="text-lg font-black">{currentIndex + 1} / {activeQuestions.length}</span>
+                        </div>
+                        <div className="text-right">
+                            <span className="text-[10px] font-black uppercase text-gray-400 block tracking-widest">Score</span>
+                            <span className="text-lg font-black text-indigo-600">{score}</span>
+                        </div>
+                    </header>
+
+                    <main className="flex-1 p-4 md:p-10 max-w-4xl mx-auto w-full overflow-y-auto">
+                        <div className="mb-10 p-8 bg-white rounded-3xl shadow-sm border border-slate-100">
+                            <div className="text-xl font-bold text-slate-800 leading-relaxed italic">
+                                {currentQ && (
+                                    <MathText text={currentPart === 'part2' ? currentQ.title : `Câu ${currentQ.id}. ${currentQ.question}`} />
+                                )}
+                            </div>
+                        </div>
+
+                        {currentPart === 'part1' && currentQ && (
+                            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-8">
+                                {currentQ.options.map((opt, idx) => {
+                                    const isSelected = selectedOption === idx;
+                                    const isCorrect = idx === currentQ.correct;
+                                    let style = "bg-white border-slate-200 text-slate-700 hover:border-indigo-400 shadow-sm";
+                                    if (selectedOption !== null) {
+                                        if (isCorrect) style = "bg-emerald-50 border-emerald-500 text-emerald-700 ring-4 ring-emerald-50 shadow-none";
+                                        else if (isSelected) style = "bg-rose-50 border-rose-500 text-rose-700 shadow-none";
+                                        else style = "bg-white border-slate-100 text-slate-300 opacity-40 shadow-none";
+                                    }
+                                    return (
+                                        <button key={idx} onClick={() => handleSelectOption(idx)} className={`p-6 rounded-2xl border-2 text-left transition-all flex items-center ${style}`}>
+                                            <span className={`w-8 h-8 flex items-center justify-center rounded-xl mr-4 font-bold text-sm flex-shrink-0 ${isSelected ? 'bg-current text-white' : 'bg-slate-100 text-slate-400'}`}>
+                                                {String.fromCharCode(65 + idx)}
+                                            </span>
+                                            <div className="flex-1">
+                                                <MathText text={opt} className="font-bold" />
+                                            </div>
+                                            {selectedOption !== null && idx === currentQ.correct && <Icon name="check-circle-2" className="ml-auto text-emerald-500 flex-shrink-0" />}
+                                        </button>
+                                    );
+                                })}
+                            </div>
+                        )}
+
+                        {currentPart === 'part2' && currentQ && (
+                            <div className="space-y-6 mb-10">
+                                {currentQ.questions.map((q, idx) => {
+                                    const userChoice = part2Choices[`${currentIndex}-${idx}`];
+                                    const isCorrect = userChoice === q.correct;
+                                    return (
+                                        <div key={idx} className={`p-6 bg-white border-2 rounded-3xl transition-all shadow-sm ${userChoice !== undefined ? (isCorrect ? 'border-emerald-200 bg-emerald-50/30' : 'border-rose-200 bg-rose-50/30') : 'border-slate-100'}`}>
+                                            <div className="flex flex-col md:flex-row md:items-center gap-4">
+                                                <div className="flex-1"><MathText text={q.text} className="text-slate-700 font-semibold" /></div>
+                                                <div className="flex items-center gap-2 flex-shrink-0">
+                                                    {[true, false].map(val => (
+                                                        <button key={val.toString()} onClick={() => handlePart2Choice(idx, val)} className={`px-6 py-2 rounded-xl font-black text-sm transition-all flex items-center gap-2 border-2 ${userChoice !== undefined ? (val === q.correct ? 'bg-emerald-500 border-emerald-500 text-white' : (userChoice === val ? 'bg-rose-500 border-rose-500 text-white' : 'bg-white border-slate-200 text-slate-400')) : 'bg-white border-slate-200 text-slate-400 hover:border-indigo-400 hover:text-indigo-500'}`}>
+                                                            {val ? 'ĐÚNG' : 'SAI'} {userChoice !== undefined && val === q.correct && <Icon name="check" size={16}/>}
+                                                        </button>
+                                                    ))}
+                                                </div>
+                                            </div>
+                                            {userChoice !== undefined && (
+                                                <div className="mt-4 pt-4 border-t border-slate-200/50 flex items-start gap-2 animate-in slide-in-from-top-2">
+                                                    <div className={`mt-1 ${isCorrect ? 'text-emerald-600' : 'text-rose-600'}`}>{isCorrect ? <Icon name="check-circle-2" size={16}/> : <Icon name="x-circle" size={16}/>}</div>
+                                                    <div className="text-sm text-slate-500 italic"><span className="font-bold text-slate-700">Lời giải: </span><MathText text={q.reason} className="inline" /></div>
+                                                </div>
+                                            )}
+                                        </div>
+                                    );
+                                })}
+                                <div className="flex justify-center pt-4">
+                                    <button onClick={handleNext} className="px-10 py-4 bg-indigo-600 text-white font-black rounded-2xl shadow-xl shadow-indigo-100 hover:bg-indigo-700 transition-all flex items-center gap-2">Tiếp tục <Icon name="arrow-right" size={20}/></button>
+                                </div>
+                            </div>
+                        )}
+
+                        {currentPart === 'part3' && currentQ && !showSolution && (
+                            <div className="space-y-4 mb-10 text-center">
+                                <input 
+                                    type="text" 
+                                    value={shortAnswer}
+                                    onChange={(e) => setShortAnswer(e.target.value)}
+                                    placeholder="Nhập đáp số..." 
+                                    className="w-full p-8 bg-white border-2 border-slate-100 rounded-3xl font-black text-2xl text-center focus:border-indigo-500 outline-none shadow-sm transition-all" 
+                                />
+                                <button onClick={handleShortAnswerCheck} className="w-full py-4 bg-indigo-600 text-white font-bold rounded-2xl shadow-xl hover:bg-indigo-700 transition-all active:scale-95">Kiểm tra đáp án</button>
+                            </div>
+                        )}
+
+                        {showSolution && currentPart !== 'part2' && (
+                            <div className="animate-in slide-in-from-bottom-10 duration-700 pb-10">
+                                <div className="bg-[#F2F4FF] rounded-[2.5rem] p-8 md:p-12 border border-indigo-50 relative overflow-hidden shadow-sm">
+                                    <div className="absolute top-0 right-0 p-8 opacity-5"><Icon name="lightbulb" size={200} /></div>
+                                    <div className="flex items-center gap-3 mb-8 relative z-10">
+                                        <div className="w-10 h-10 bg-indigo-600 rounded-xl flex items-center justify-center text-white shadow-lg shadow-indigo-200"><Icon name="info" size={22} /></div>
+                                        <h3 className="text-base font-black uppercase tracking-widest text-indigo-900">Phân tích lời giải</h3>
+                                    </div>
+                                    <div className="space-y-8 relative z-10">
+                                        {currentQ.solution?.steps.map((step, sIdx) => (
+                                            <div key={sIdx} className="flex gap-6 group">
+                                                <div className="flex-shrink-0 mt-1">
+                                                    <span className="bg-white px-3 py-1.5 rounded-lg text-[10px] font-black text-indigo-500 border border-indigo-100 uppercase tracking-tighter shadow-sm block group-hover:scale-110 transition-transform">BƯỚC {sIdx + 1}</span>
+                                                </div>
+                                                <div className="text-slate-600 font-medium leading-relaxed italic flex-1">
+                                                    <MathText text={step} />
+                                                </div>
+                                            </div>
+                                        ))}
+                                    </div>
+                                    <div className="mt-12 pt-8 border-t border-indigo-100/50 flex flex-wrap items-center justify-between gap-6 relative z-10">
+                                        <div className="flex items-center gap-3">
+                                            <span className="text-xs font-black text-indigo-400 uppercase tracking-widest">ĐÁP SỐ:</span>
+                                            <div className="text-2xl font-black text-indigo-700 bg-white px-6 py-2 rounded-2xl border border-indigo-50 shadow-sm min-w-[80px] text-center">
+                                                <MathText text={currentQ.solution?.answer || 'N/A'} />
+                                            </div>
+                                        </div>
+                                        <button onClick={handleNext} className="bg-indigo-600 hover:bg-black text-white px-10 py-4 rounded-2xl font-bold flex items-center gap-3 shadow-2xl transition-all group active:scale-95">Câu kế tiếp <Icon name="chevron-right" size={20} className="group-hover:translate-x-1 transition-transform"/></button>
+                                    </div>
+                                </div>
+                            </div>
+                        )}
+                    </main>
+
+                    {view === 'finish' && (
+                        <div className="fixed inset-0 bg-indigo-600 z-[100] flex items-center justify-center p-6 text-center text-white">
+                            <div className="max-w-sm w-full animate-in zoom-in duration-500">
+                                <Icon name="award" size={100} className="mx-auto mb-6 text-yellow-300" />
+                                <h2 className="text-4xl font-black mb-2">Hoàn thành!</h2>
+                                <p className="text-indigo-100 mb-8 opacity-90">Bạn đã hoàn thành bài ôn tập này với kết quả rất tốt.</p>
+                                <div className="bg-white/10 p-6 rounded-3xl mb-8 backdrop-blur-md">
+                                    <span className="text-xs font-bold uppercase tracking-widest text-indigo-200">Điểm của bạn</span>
+                                    <div className="text-6xl font-black mt-1">{score}</div>
+                                </div>
+                                <button onClick={() => setView('home')} className="w-full py-4 bg-white text-indigo-600 font-black rounded-2xl shadow-2xl hover:bg-slate-100 transition-all active:scale-95">Về trang chủ</button>
+                            </div>
+                        </div>
+                    )}
+                </div>
+            );
+        };
+
+        const root = ReactDOM.createRoot(document.getElementById('root'));
+        root.render(<App />);
+    </script>
+</body>
+</html>
